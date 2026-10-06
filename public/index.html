@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tasks</title>
+  <style>
+    body { font: 16px system-ui, sans-serif; margin: 2rem auto; max-width: 42rem; padding: 0 1rem; }
+    form, .controls { align-items: end; display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+    label { display: grid; gap: .25rem; }
+    input, select, button { font: inherit; padding: .4rem; }
+    li { margin: .5rem 0; }
+    #message { color: #a00; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Tasks</h1>
+    <form id="task-form">
+      <label>Title <input name="title" required></label>
+      <label>Priority
+        <select name="priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </label>
+      <label>Due date <input name="dueDate" type="date"></label>
+      <button type="submit">Add task</button>
+    </form>
+    <section class="controls" aria-label="Task list controls">
+      <label>Filter priority
+        <select id="priority-filter">
+          <option value="">All priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+      </label>
+      <label>Due-date order
+        <select id="due-date-order">
+          <option value="asc">Soonest first</option>
+          <option value="desc">Latest first</option>
+        </select>
+      </label>
+    </section>
+    <p id="message" role="status" aria-live="polite"></p>
+    <ul id="task-list"></ul>
+  </main>
+  <script>
+    const form = document.querySelector('#task-form');
+    const priorityFilter = document.querySelector('#priority-filter');
+    const dueDateOrder = document.querySelector('#due-date-order');
+    const taskList = document.querySelector('#task-list');
+    const message = document.querySelector('#message');
+
+    function showMessage(text) {
+      message.textContent = text;
+    }
+
+    function renderTasks(tasks) {
+      taskList.replaceChildren();
+      for (const task of tasks) {
+        const item = document.createElement('li');
+        const dueDate = task.dueDate ? ` — due ${task.dueDate}` : '';
+        item.textContent = `${task.title} (${task.priority})${dueDate}`;
+        taskList.append(item);
+      }
+    }
+
+    async function loadTasks() {
+      const params = new URLSearchParams({ sort: 'dueDate', order: dueDateOrder.value });
+      if (priorityFilter.value) params.set('priority', priorityFilter.value);
+      try {
+        const response = await fetch(`/tasks?${params}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not load tasks');
+        renderTasks(data);
+        showMessage('');
+      } catch (error) {
+        showMessage(error.message);
+      }
+    }
+
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      const fields = new FormData(form);
+      const task = {
+        title: fields.get('title'),
+        priority: fields.get('priority')
+      };
+      const dueDate = fields.get('dueDate');
+      if (dueDate) task.dueDate = dueDate;
+      try {
+        const response = await fetch('/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(task)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not add task');
+        form.reset();
+        showMessage('');
+        await loadTasks();
+      } catch (error) {
+        showMessage(error.message);
+      }
+    });
+
+    priorityFilter.addEventListener('change', loadTasks);
+    dueDateOrder.addEventListener('change', loadTasks);
+    loadTasks();
+  </script>
+</body>
+</html>

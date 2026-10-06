@@ -1,8 +1,10 @@
 const express = require('express');
+const path = require('node:path');
 const tasks = require('./tasks');
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/tasks', (req, res) => {
   const { priority, sort, order } = req.query;

@@ -87,3 +87,14 @@ test.each([
   expect(res.status).toBe(400);
   expect(res.body).toEqual({ error });
 });
+
+test('serves the task UI with task creation and list controls', async () => {
+  const res = await request(app).get('/');
+
+  expect(res.status).toBe(200);
+  expect(res.type).toBe('text/html');
+  expect(res.text).toContain('id="task-form"');
+  expect(res.text).toContain('name="dueDate"');
+  expect(res.text).toContain('id="priority-filter"');
+  expect(res.text).toContain('id="due-date-order"');
+});
