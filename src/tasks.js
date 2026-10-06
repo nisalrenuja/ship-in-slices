@@ -2,8 +2,19 @@ let items = [];
 let nextId = 1;
 const priorities = new Set(['low', 'medium', 'high']);
 
-function list() {
-  return items;
+function list({ priority, sort, order = 'asc' } = {}) {
+  let result = priority ? items.filter(task => task.priority === priority) : [...items];
+
+  if (sort === 'dueDate') {
+    result = result.sort((a, b) => {
+      if (!a.dueDate) return b.dueDate ? 1 : 0;
+      if (!b.dueDate) return -1;
+      const comparison = a.dueDate.localeCompare(b.dueDate);
+      return order === 'desc' ? -comparison : comparison;
+    });
+  }
+
+  return result;
 }
 
 function validateMetadata(metadata = {}) {
