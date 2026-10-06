@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tasks</title>
+  <style>
+    body { font: 16px system-ui, sans-serif; margin: 2rem auto; max-width: 42rem; padding: 0 1rem; }
+    li { align-items: center; border-bottom: 1px solid #ddd; display: flex; gap: .75rem; padding: .75rem 0; }
+    .priority { border-radius: 1rem; font-size: .8rem; padding: .2rem .6rem; text-transform: capitalize; }
+    .low { background: #e8f5e9; }
+    .medium { background: #fff3cd; }
+    .high { background: #f8d7da; }
+    time { color: #555; margin-left: auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Tasks</h1>
+    <p id="status" role="status">Loading tasks…</p>
+    <ul id="tasks"></ul>
+  </main>
+  <script>
+    const status = document.getElementById('status');
+    const list = document.getElementById('tasks');
+
+    fetch('/tasks')
+      .then((response) => {
+        if (!response.ok) throw new Error('Could not load tasks.');
+        return response.json();
+      })
+      .then((tasks) => {
+        status.textContent = tasks.length ? '' : 'No tasks yet.';
+        for (const task of tasks) {
+          const item = document.createElement('li');
+          const title = document.createElement('span');
+          title.textContent = task.title;
+          const badge = document.createElement('span');
+          badge.className = `priority ${task.priority}`;
+          badge.textContent = task.priority;
+          item.append(title, badge);
+          if (task.dueDate) {
+            const dueDate = document.createElement('time');
+            dueDate.dateTime = task.dueDate;
+            dueDate.textContent = `Due ${task.dueDate}`;
+            item.append(dueDate);
+          }
+          list.append(item);
+        }
+      })
+      .catch(() => {
+        status.textContent = 'Could not load tasks.';
+      });
+  </script>
+</body>
+</html>
